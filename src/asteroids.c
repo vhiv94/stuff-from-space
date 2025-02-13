@@ -2,7 +2,10 @@
 #include "raymath.h"
 #include "sfs.h"
 #include "player.h"
+#include "lasers.h"
 #include "asteroids.h"
+
+#include <stdio.h>
 
 Asteroid* LoadAsteroids(int count)
 {
@@ -56,7 +59,7 @@ int CheckAsteroidCollisions(Asteroid* asteroids, int count, Player player)
 		}
 }
 
-void DrawAsteroids(Asteroid* asteroids, int count, TexturePro texture)
+void DrawAsteroids(Asteroid* asteroids, int count, Sprite texture)
 {
 	for (int i = 0; i < count; i++)
 	{
@@ -69,5 +72,46 @@ void DrawAsteroids(Asteroid* asteroids, int count, TexturePro texture)
 		DrawCircleV(asteroids[i].collisionBody.center, asteroids[i].collisionBody.radius, TRANSLUCENT);
 #endif // DEBUG
 
+	}
+}
+
+void CheckCollisions(Player* player, Asteroid* asteroids, int* asteroidCount, Laser* lasers, int* laserCount)
+{
+	for (int i = 0; i < *asteroidCount; i++)
+	{
+
+		if (laserCount != NULL)
+		{
+			for (int j = 0; j < *laserCount; j++)
+			{
+				if (CheckCollisionCircles(asteroids[i].collisionBody.center, asteroids[i].collisionBody.radius, lasers[j].collisionBody.center, lasers[j].collisionBody.radius))
+				{
+				  // destroy laser
+					for (int k = j; k < *laserCount; k++)
+					{
+						lasers[k] = lasers[k + 1];
+					}
+					*laserCount -= 1;
+
+					// destroy asteroid
+					//asteroid[i].dead = 1;
+					for (int k = i; k < *asteroidCount; k++)
+					{
+						asteroids[k] = asteroids[k + 1];
+					}
+					*asteroidCount -= 1;
+				}
+			}
+		}
+
+		if (!player->dead)
+		{
+			if (CheckCollisionCircles(asteroids[i].collisionBody.center, asteroids[i].collisionBody.radius, player->collisionBody.center, player->collisionBody.radius))
+			{
+				printf_s("you died at (%f, %f)\n", player->position.x, player->position.y);
+				player->speed = 0;
+				player->dead = 1;
+			}
+		}
 	}
 }

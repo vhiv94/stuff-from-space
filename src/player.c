@@ -3,15 +3,23 @@
 #include "sfs.h"
 #include "player.h"
 
-float GetPlayerSpeed(float curSpeed)
+void GetPlayerSpeed(float* speed)
 {
-	if (curSpeed <= MAX_SPEED)
-		curSpeed += (float)((IsKeyDown(KEY_W) || IsKeyDown(KEY_UP)) - (IsKeyUp(KEY_W) && IsKeyUp(KEY_UP)));
-	if (curSpeed > MAX_SPEED)
-		return MAX_SPEED;
-	else if (curSpeed < 0)
-		return 0.0f;
-	return curSpeed;
+	if (*speed <= MAX_SPEED)
+		*speed += (float)((IsKeyDown(KEY_W) || IsKeyDown(KEY_UP)) - (IsKeyUp(KEY_W) && IsKeyUp(KEY_UP)));
+	if (*speed > MAX_SPEED)
+		*speed = MAX_SPEED;
+	else if (*speed < 0)
+		*speed = 0.0f;
+}
+
+void getPlayerInput(Player* player)
+{
+	if (player->dead)
+		return;
+ 	GetPlayerSpeed(&player->speed);
+	player->rotation += (IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) - (IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT));
+	player->direction = GetNormalizedDirection(player->rotation);
 }
 
 Vector2 GetPlayerVelocity(Vector2 direction, float speed)
@@ -23,21 +31,22 @@ Vector2 GetPlayerVelocity(Vector2 direction, float speed)
 
 void UpdatePlayerPosition(Player* player, float dt)
 {
+	if (player->dead)
+		return;
 // player position
-		player->position.x += player->direction.x * player->speed * dt;
-		player->position.y += player->direction.y * player->speed * dt;
+	player->position.x += player->direction.x * player->speed * dt;
+	player->position.y += player->direction.y * player->speed * dt;
 
-		// wrap player
-		if (player->position.x <= -4000 || player->position.x >= 4000)
-			player->position.x *= -1;
-		if (player->position.y <= -2000 || player->position.y >= 2000)
-			player->position.y *= -1;
+	// wrap player
+	if (player->position.x <= -4000 || player->position.x >= 4000)
+		player->position.x *= -1;
+	if (player->position.y <= -2000 || player->position.y >= 2000)
+		player->position.y *= -1;
 
-		// sprite position
-		player->sprite.destRect.x = player->position.x;
-		player->sprite.destRect.y = player->position.y;
+	// sprite position
+	player->sprite.destRect.x = player->position.x;
+	player->sprite.destRect.y = player->position.y;
 
-		// collision body position
-		player->collisionBody.center = player->position;
-
+	// collision body position
+	player->collisionBody.center = player->position;
 }

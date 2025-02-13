@@ -49,9 +49,26 @@ int main ()
 		.sprite.origin = { 28, 22 },
 	};
 
+	Image deathSprites[28] = {0};
+	int deathFrame = -1;
+	char deathSpritesFileName[17];
+	for (int i = 1; i < 29; i++)
+	{
+		sprintf_s(deathSpritesFileName, 17, "explosion/%d.png", i);
+		deathSprites[i - 1] = LoadImage(deathSpritesFileName);
+	}
+	SpriteSheet death =
+	{
+		.spriteImg = LoadTextureFromImage(deathSprites[0]),
+		.timer.duration = 1.0 / 24.0,
+		.srcRect = { 0, 0, death.spriteImg.width, death.spriteImg.height },
+		.destRect = { 0, 0, death.spriteImg.width * 2, death.spriteImg.height * 2},
+		.origin = { 48, 46 },
+	};
+
 	// asteroid assets
 	Asteroid* asteroids = LoadAsteroids(asteroidCount);
-	TexturePro asteroidSprite =
+	Sprite asteroidSprite =
 	{
 			.spriteImg = LoadTexture("meteor.png"),
 			.srcRect = { 0, 0, asteroidSprite.spriteImg.width, asteroidSprite.spriteImg.height },
@@ -59,7 +76,7 @@ int main ()
 
 	// laser assets
 	Laser* lasers = MemAlloc(100 * sizeof(Laser));
-	TexturePro laserSprite =
+	Sprite laserSprite =
 	{
 			.spriteImg = LoadTexture("laser.png"),
 			.srcRect = { 0, 0, laserSprite.spriteImg.width, laserSprite.spriteImg.height },
@@ -73,10 +90,9 @@ int main ()
 	SpriteSheet earth =
 	{
 			.spriteImg = LoadTexture("Earth-Like planet.png"),
-			.timer.startTime = 0.0,
 			.timer.duration = 1.0 / 12.0,
 			.srcRect = { 0, 0, 96, 96 },
-			.destRect = { 0, 0, 384, 384 },
+			.destRect = { 200, 100, 384, 384 },
 			.origin = { 192, 192 },
 	};
 
@@ -91,11 +107,11 @@ int main ()
 	};
 
 
-#ifdef RELEASE
+#ifdef NDEBUG
 	Music bgm = LoadMusicStream("music.wav");
 	PlayMusicStream(bgm);
 	SetMusicVolume(bgm, 0.6f);
-#endif
+#endif // NDEBUG
 
 	// game loop
 	while (!WindowShouldClose())		// run the loop untill the user presses ESCAPE or presses the Close button on the window
@@ -106,39 +122,34 @@ int main ()
 		// inputs
 		if (IsCursorOnScreen())
 			HideCursor();
-#if 0
-		shipPosition = GetMousePosition();
-		if (shipPosition.x > 584)
-			shipPosition.x = 584;
-		if (shipPosition.y > 682)
-			shipPosition.y = 682;
 
-		if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-			// shoot()
-		if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
-			// missile()
-
-		player.direction.x = (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D)) - (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A));
-		player.direction.y = (IsKeyDown(KEY_DOWN) || IsKeyDown(KEY_S)) - (IsKeyDown(KEY_UP) || IsKeyDown(KEY_W));
-		player.direction = Vector2Normalize(player.direction);
-#endif
-		player.speed = GetPlayerSpeed(player.speed);
-		player.rotation += (IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) - (IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT));
-		player.direction = GetNormalizedDirection(player.rotation);
-		if (IsKeyPressed(KEY_SPACE))
+		getPlayerInput(&player);
+	
+		if (!player.dead)
 		{
+			if (IsKeyPressed(KEY_SPACE))
+			{
 				SetSoundPitch(laserSound, 0.01f * (float)GetRandomValue(95, 105));
 				PlaySound(laserSound);
 				lasers[laserCount++] = ShootLaser(player);
+			}
+		}
+
+		if (player.dead && !death.timer.started)
+		{
+			death.timer.started = 1;
+			death.timer.startTime = GetTime();
+			death.destRect.x = player.position.x;
+			death.destRect.y = player.position.y;
 		}
 
 		/********************
 		*      UPDATES      * 
 		********************/
 
-#ifdef RELEASE
+#ifdef NDEBUG
 		UpdateMusicStream(bgm);
-#endif // RELEASE
+#endif // NDEBUG
 
 		// deltaT
 		float dt = GetFrameTime();
@@ -150,13 +161,17 @@ int main ()
 			camera.zoom = 1.0f - ((player.speed - 100.0f) / (5.0f * MAX_SPEED));
 
 		UpdateAsteroidPositions(asteroids, asteroidCount, dt);
-		UpdateLaserPositions(lasers, laserCount, dt);
+		UpdateLaserPositions(lasers, &laserCount, dt);
 		if (CheckAnimationTimer(&earth.timer))
 			UpdateAnimation(&earth);
 
+		if (death.timer.started)
+			if (CheckAnimationTimer(&death.timer))
+				if (++deathFrame < 28)
+					death.spriteImg = LoadTextureFromImage(deathSprites[deathFrame]);
+
 		// collision
-		//CheckCollisionBoxSphere();
-		//bool isColliding =  CheckCollisionCircles(player.collisionBody.center, player.collisionBody.radius, (Vector2) { 300, 300 }, 30.0f);
+		CheckCollisions(&player, asteroids, &asteroidCount, lasers, &laserCount);
 
 		// drawing
 		BeginDrawing();
@@ -175,10 +190,14 @@ int main ()
 		DrawTexturePro(earth.spriteImg, earth.srcRect, earth.destRect, earth.origin, 0, RAYWHITE);
 		DrawLasers(lasers, laserCount, laserSprite);
 		DrawAsteroids(asteroids, asteroidCount, asteroidSprite);
-		DrawTexturePro(player.sprite.spriteImg, player.sprite.srcRect, player.sprite.destRect, player.sprite.origin, player.rotation, RAYWHITE);
+		if (deathFrame < 16)
+			DrawTexturePro(player.sprite.spriteImg, player.sprite.srcRect, player.sprite.destRect, player.sprite.origin, player.rotation, RAYWHITE);
+		if (death.timer.started && deathFrame < 28)
+			DrawTexturePro(death.spriteImg, death.srcRect, death.destRect, death.origin, 0, RAYWHITE);
 
 #ifdef DEBUG
-		DrawCircleV(player.collisionBody.center, player.collisionBody.radius, TRANSLUCENT);
+		if (!player.dead)
+			DrawCircleV(player.collisionBody.center, player.collisionBody.radius, TRANSLUCENT);
 #endif // DEBUG
 
 		// end the frame and get ready for the next one  (display frame, poll input, etc...)
@@ -189,13 +208,15 @@ int main ()
 	// cleanup
 	// unload our texture so it can be cleaned up
 	UnloadSound(laserSound);
-#ifdef RELEASE
+#ifdef NDEBUG
 	StopMusicStream(bgm);
 	UnloadMusicStream(bgm);
-#endif // RELEASE
+#endif // NDEBUG
 	UnloadTexture(player.sprite.spriteImg);
 	UnloadTexture(asteroidSprite.spriteImg);
 	UnloadTexture(laserSprite.spriteImg);
+	UnloadTexture(earth.spriteImg);
+	UnloadTexture(death.spriteImg);
 	MemFree(asteroids);
 //	MemFree(lasers);
 
@@ -215,15 +236,14 @@ int CheckTimeout(Timer timer)
 }
 #endif
 
-int CheckAnimationTimer(AnimationTimer* timer)
+int CheckAnimationTimer(Timer* timer)
 {
   if (GetTime() >= timer->startTime + timer->duration)
   {
     timer->startTime += timer->duration;
     return 1;
   }
-  else
-    return 0;
+  return 0;
 }
 
 void UpdateAnimation(SpriteSheet* sprite)

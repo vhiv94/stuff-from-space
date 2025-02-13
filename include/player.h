@@ -5,16 +5,17 @@
 
 typedef struct Player
 {
-	TexturePro sprite;
+	Sprite sprite;
 	Circle collisionBody;
 	Vector2 position;
 	Vector2 direction;
 	Vector2 velocity;
 	float speed;
 	float rotation;
+	char dead;
 } Player;
 
-float GetPlayerSpeed(float curSpeed);
+void getPlayerInput(Player* player);
 void UpdatePlayerPosition(Player* player, float dt);
 
 #endif // !PLAYER_H

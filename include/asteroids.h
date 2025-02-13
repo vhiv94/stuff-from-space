@@ -15,6 +15,7 @@ typedef struct Asteroid
 
 Asteroid* LoadAsteroids(int count);
 void UpdateAsteroidPositions(Asteroid* asteroids, int count, float dt);
-void DrawAsteroids(Asteroid* asteroids, int count, TexturePro texture);
+void DrawAsteroids(Asteroid* asteroids, int count, Sprite texture);
+void CheckCollisions(Player* player, Asteroid* asteroids, int* asteroidCount, Laser* lasers, int* laserCount);
 
 #endif // !ASTEROIDS_H

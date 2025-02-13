@@ -5,24 +5,25 @@
 #define SPACE (Color) { 33, 15, 75, 255 }
 #define TRANSLUCENT (Color) { 245, 245, 245, 127 }
 
-typedef struct TexturePro
+typedef struct Sprite
 {
 	Texture spriteImg;
 	Rectangle srcRect;
 	Rectangle destRect;
 	Vector2 origin;
-} TexturePro;
+} Sprite;
 
-typedef struct AnimationTimer
+typedef struct Timer
 {
 	double startTime;
 	double duration;
-} AnimationTimer;
+	char started;
+} Timer;
 
 typedef struct SpriteSheet
 {
 	Texture spriteImg;
-	AnimationTimer timer;
+	Timer timer;
 	Rectangle srcRect;
 	Rectangle destRect;
 	Vector2 origin;
@@ -45,8 +46,7 @@ typedef struct Timer
 
 
 //int CheckTimeout(Timer timer);
-double GetTime(void);
-int CheckAnimationTimer(AnimationTimer* timer);
+int CheckAnimationTimer(Timer* timer);
 void UpdateAnimation(SpriteSheet* sprite);
 Vector2 GetNormalizedDirection(float rotation);
 
