@@ -1,4 +1,5 @@
 #include "raylib.h"
+#include "sfs.h"
 #include "stars.h"
 
 Color colors[7] = 
@@ -12,10 +13,10 @@ Color colors[7] =
 	{ 245, 245, 245, 127 }, // raywhite
 };
 
-Star* LoadStars(int count)
+Star* LoadStars()
 {
-	Star* stars = (Star*)MemAlloc(count * sizeof(Star));
-	for (int i = 0; i < count; i++)
+	Star* stars = (Star*)MemAlloc(starCount * sizeof(Star));
+	for (int i = 0; i < starCount; i++)
 	{
 		stars[i].position = (Vector2){ GetRandomValue(-4000, 4000), GetRandomValue(-2000, 2000) };
 		stars[i].size = (float)GetRandomValue(1, 3) * 0.5f;
@@ -24,9 +25,9 @@ Star* LoadStars(int count)
 	return stars;
 }
 
-void DrawStars(Star* stars, int count, Texture texture)
+void DrawStars(Star* stars, Texture texture)
 {
-	for (int i = 0; i < count; i++)
+	for (int i = 0; i < starCount; i++)
 	{
 		DrawTextureEx(texture, stars[i].position, 0, stars[i].size, stars[i].color);
 	}

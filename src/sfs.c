@@ -1,45 +1,43 @@
-/*
-Raylib example file.
-This is an example main file for a simple raylib project.
-Use this as a starting point or replace it with your code.
-
-by Jeffery Myers is marked with CC0 1.0. To view a copy of this license, visit https://creativecommons.org/publicdomain/zero/1.0/
-
-*/
 #include <stdio.h>
 #include <time.h>
 #include "raylib.h"
 #include "raymath.h"
-#include "resource_dir.h"	// utility header for SearchAndSetResourceDir
+#include "resource_dir.h"
 #include "sfs.h"
 #include "player.h"
 #include "lasers.h"
 #include "asteroids.h"
 #include "stars.h"
 
+starCount = 500;
+asteroidCount = 100;
+laserCount = 0;
 
 int main ()
 {
-	int asteroidCount = 100;
-	int laserCount = 0;
-	int frameCount = 0;
-	char fps[9] = {'\0'};
+															/***********************
+															*      INITIALIZE      *
+															*					 and				 *
+															*      Load Assets		 *
+															***********************/
 
-	// Tell the window to use vsync and work on high DPI displays
+	// variables
+	SetRandomSeed(time(NULL));
+
+
+	// initialize window
 	SetConfigFlags(FLAG_VSYNC_HINT | FLAG_WINDOW_HIGHDPI);
+	InitWindow(1920, 1080, "Stuff From Space!");
+	SetExitKey(0);
 
-	// Create the window and OpenGL context
-	InitWindow(1920, 1080, "Asteroids");
-	SetExitKey(KEY_ESCAPE);
+	// initialize audio
 	InitAudioDevice();
 	SetMasterVolume(0.8f);
 
-	// Utility function from resource_dir.h to find the resources folder and set it as the current working directory so we can load from it
+	// resource_dir.h
 	SearchAndSetResourceDir("resources");
-	SetRandomSeed(time(NULL));
 
-	// Load Entities and Assets
-
+	// initialize player
 	Player player =
 	{
 		.collisionBody = {{ 28.0f, 22.0f }, 18.0f }, // center = { posX + 28, posY + 22 }
@@ -49,6 +47,7 @@ int main ()
 		.sprite.origin = { 28, 22 },
 	};
 
+	// initialize deathsplosion
 	Image deathSprites[28] = {0};
 	int deathFrame = -1;
 	char deathSpritesFileName[17];
@@ -60,21 +59,21 @@ int main ()
 	SpriteSheet death =
 	{
 		.spriteImg = LoadTextureFromImage(deathSprites[0]),
-		.timer.duration = 1.0 / 24.0,
+		.timer.duration = 1.0 / 48.0,
 		.srcRect = { 0, 0, death.spriteImg.width, death.spriteImg.height },
 		.destRect = { 0, 0, death.spriteImg.width * 2, death.spriteImg.height * 2},
 		.origin = { 48, 46 },
 	};
 
-	// asteroid assets
-	Asteroid* asteroids = LoadAsteroids(asteroidCount);
+	// initialize asteroids
+	Asteroid* asteroids = LoadAsteroids();
 	Sprite asteroidSprite =
 	{
 			.spriteImg = LoadTexture("meteor.png"),
 			.srcRect = { 0, 0, asteroidSprite.spriteImg.width, asteroidSprite.spriteImg.height },
 	};
 
-	// laser assets
+	// initialize lasers
 	Laser* lasers = MemAlloc(100 * sizeof(Laser));
 	Sprite laserSprite =
 	{
@@ -86,7 +85,8 @@ int main ()
 	Sound laserSound = LoadSound("laser.wav");
 	SetSoundVolume(laserSound, 0.5f);
 
-	// background elements
+	/*** background elements ***/
+	// initialize earth
 	SpriteSheet earth =
 	{
 			.spriteImg = LoadTexture("Earth-Like planet.png"),
@@ -96,9 +96,11 @@ int main ()
 			.origin = { 192, 192 },
 	};
 
-	Star* stars = LoadStars(500);
+	// initialize stars
+	Star* stars = LoadStars();
 	Texture starSprite = LoadTexture("star.png");
 
+	// initialize camera
 	Camera2D camera =
 	{
 		.offset = { 960, 540 },
@@ -106,35 +108,19 @@ int main ()
 		.target = player.position,
 	};
 
-
+	// initialize bgm
 #ifdef NDEBUG
 	Music bgm = LoadMusicStream("music.wav");
 	PlayMusicStream(bgm);
 	SetMusicVolume(bgm, 0.6f);
 #endif // NDEBUG
 
-	// game loop
-	while (!WindowShouldClose())		// run the loop untill the user presses ESCAPE or presses the Close button on the window
+																/*********************
+																*      GAMELOOP      *
+																*********************/
+	while (!WindowShouldClose())
 	{
-		// increment frame counter as a representation of which frame is currently being calculated
-		frameCount++;
-
-		// inputs
-		if (IsCursorOnScreen())
-			HideCursor();
-
-		getPlayerInput(&player);
-	
-		if (!player.dead)
-		{
-			if (IsKeyPressed(KEY_SPACE))
-			{
-				SetSoundPitch(laserSound, 0.01f * (float)GetRandomValue(95, 105));
-				PlaySound(laserSound);
-				lasers[laserCount++] = ShootLaser(player);
-			}
-		}
-
+		// initialize death animation (once)
 		if (player.dead && !death.timer.started)
 		{
 			death.timer.started = 1;
@@ -142,71 +128,108 @@ int main ()
 			death.destRect.x = player.position.x;
 			death.destRect.y = player.position.y;
 		}
-
-		/********************
-		*      UPDATES      * 
-		********************/
-
-#ifdef NDEBUG
-		UpdateMusicStream(bgm);
-#endif // NDEBUG
+		
+																/********************
+																*      UPDATES      * 
+																********************/
 
 		// deltaT
 		float dt = GetFrameTime();
 
-		UpdatePlayerPosition(&player, dt);
+		// hide cursor
+		if (IsCursorOnScreen())
+			HideCursor();
+
+		// player inputs
+		if (!player.dead)
+			getPlayerInput(&player);
+	
+		// laser input and creation
+		if (IsKeyPressed(KEY_SPACE) && !player.dead)
+		{
+			SetSoundPitch(laserSound, 0.01f * (float)GetRandomValue(95, 105));
+			PlaySound(laserSound);
+			lasers[laserCount++] = ShootLaser(player);
+		}
+
+		// update player
+		if (!player.dead)
+			UpdatePlayerPosition(&player, dt);
 		
+		// update asteroids
+		UpdateAsteroidPositions(asteroids, dt);
+
+		//update lasers
+		UpdateLaserPositions(lasers, dt);
+
+		// update camera
 		camera.target = player.position;
 		if (player.speed > 100)
 			camera.zoom = 1.0f - ((player.speed - 100.0f) / (5.0f * MAX_SPEED));
 
-		UpdateAsteroidPositions(asteroids, asteroidCount, dt);
-		UpdateLaserPositions(lasers, &laserCount, dt);
+		// animate planet
 		if (CheckAnimationTimer(&earth.timer))
 			UpdateAnimation(&earth);
 
+		// animate death
 		if (death.timer.started)
 			if (CheckAnimationTimer(&death.timer))
 				if (++deathFrame < 28)
 					death.spriteImg = LoadTextureFromImage(deathSprites[deathFrame]);
 
-		// collision
-		CheckCollisions(&player, asteroids, &asteroidCount, lasers, &laserCount);
+		// update bgm
+#ifdef NDEBUG
+		UpdateMusicStream(bgm);
+#endif // NDEBUG
 
-		// drawing
+		// collision
+		CheckCollisions(&player, asteroids, lasers);
+
+																/***********************
+																*      DRAW FRAME      * 
+																***********************/
+
 		BeginDrawing();
 		BeginMode2D(camera);
 
-		// Setup the back buffer for drawing (clear color and depth buffers)
+		// set background color
 		ClearBackground(SPACE);
 
-		// draw some text using the default font
+		// TODO: fix with camera values
+		// draw fps
 		sprintf_s(&fps, 9, "%d FPS", GetFPS());
 		DrawText(fps, player.position.x - 960.0f, player.position.y - 540.0f, 20, GREEN);
 
-		// draw our texture to the screen
-		//DrawCircleV((Vector2){ 0, 0 }, 30, WHITE);
-		DrawStars(stars, 500, starSprite);
+		// draw background
+		DrawStars(stars, starSprite);
 		DrawTexturePro(earth.spriteImg, earth.srcRect, earth.destRect, earth.origin, 0, RAYWHITE);
-		DrawLasers(lasers, laserCount, laserSprite);
-		DrawAsteroids(asteroids, asteroidCount, asteroidSprite);
+
+		// draw lasers
+		if (laserCount)
+			DrawLasers(lasers, laserSprite);
+
+		// draw asteroids
+		DrawAsteroids(asteroids, asteroidSprite);
+
+		// draw player
 		if (deathFrame < 16)
 			DrawTexturePro(player.sprite.spriteImg, player.sprite.srcRect, player.sprite.destRect, player.sprite.origin, player.rotation, RAYWHITE);
-		if (death.timer.started && deathFrame < 28)
-			DrawTexturePro(death.spriteImg, death.srcRect, death.destRect, death.origin, 0, RAYWHITE);
-
 #ifdef DEBUG
 		if (!player.dead)
 			DrawCircleV(player.collisionBody.center, player.collisionBody.radius, TRANSLUCENT);
 #endif // DEBUG
+		if (death.timer.started && deathFrame < 28)
+			DrawTexturePro(death.spriteImg, death.srcRect, death.destRect, death.origin, 0, RAYWHITE);
 
-		// end the frame and get ready for the next one  (display frame, poll input, etc...)
 		EndMode2D();
 		EndDrawing();
-	}
+	} // end of gameloop
 
-	// cleanup
-	// unload our texture so it can be cleaned up
+																/********************
+																*      CLEANUP      *
+																********************/
+
+	// unload assets
 	UnloadSound(laserSound);
 #ifdef NDEBUG
 	StopMusicStream(bgm);
@@ -217,26 +240,20 @@ int main ()
 	UnloadTexture(laserSprite.spriteImg);
 	UnloadTexture(earth.spriteImg);
 	UnloadTexture(death.spriteImg);
+
+	// deallocate memory
 	MemFree(asteroids);
-//	MemFree(lasers);
+	MemFree(lasers);
 
 	// destroy the window and cleanup the OpenGL context
 	CloseAudioDevice();
 	CloseWindow();
+
+	// return success!
 	return 0;
 }
 
-#if 0
-int CheckTimeout(Timer timer)
-{
-  if (time(0) >= timer.startTime + timer.duration)
-    return 1;
-  else
-    return 0;
-}
-#endif
-
-int CheckAnimationTimer(Timer* timer)
+boolean CheckAnimationTimer(Timer* timer)
 {
   if (GetTime() >= timer->startTime + timer->duration)
   {

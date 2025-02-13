@@ -12,7 +12,7 @@ typedef struct Laser
 } Laser;
 
 Laser ShootLaser(Player player);
-void UpdateLaserPositions(Laser* lasers, int* count, float dt);
-void DrawLasers(Laser* lasers, int count, Sprite texture);
+void UpdateLaserPositions(Laser* lasers, float dt);
+void DrawLasers(Laser* lasers, Sprite texture);
 
 #endif // !LASERS_H

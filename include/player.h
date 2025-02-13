@@ -12,7 +12,7 @@ typedef struct Player
 	Vector2 velocity;
 	float speed;
 	float rotation;
-	char dead;
+	boolean dead;
 } Player;
 
 void getPlayerInput(Player* player);

@@ -8,7 +8,7 @@ typedef struct Star
 	Color color;
 } Star;
 
-Star* LoadStars(int count);
-void DrawStars(Star* stars, int count, Texture texture);
+Star* LoadStars();
+void DrawStars(Star* stars, Texture texture);
 
 #endif // !STARS_H

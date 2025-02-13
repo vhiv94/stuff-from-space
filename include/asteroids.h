@@ -13,9 +13,9 @@ typedef struct Asteroid
 	float size;
 } Asteroid;
 
-Asteroid* LoadAsteroids(int count);
-void UpdateAsteroidPositions(Asteroid* asteroids, int count, float dt);
-void DrawAsteroids(Asteroid* asteroids, int count, Sprite texture);
-void CheckCollisions(Player* player, Asteroid* asteroids, int* asteroidCount, Laser* lasers, int* laserCount);
+Asteroid* LoadAsteroids();
+void UpdateAsteroidPositions(Asteroid* asteroids, float dt);
+void DrawAsteroids(Asteroid* asteroids, Sprite texture);
+void CheckCollisions(Player* player, Asteroid* asteroids, Laser* lasers);
 
 #endif // !ASTEROIDS_H

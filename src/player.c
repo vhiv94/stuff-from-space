@@ -15,8 +15,6 @@ void GetPlayerSpeed(float* speed)
 
 void getPlayerInput(Player* player)
 {
-	if (player->dead)
-		return;
  	GetPlayerSpeed(&player->speed);
 	player->rotation += (IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) - (IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT));
 	player->direction = GetNormalizedDirection(player->rotation);
@@ -31,8 +29,6 @@ Vector2 GetPlayerVelocity(Vector2 direction, float speed)
 
 void UpdatePlayerPosition(Player* player, float dt)
 {
-	if (player->dead)
-		return;
 // player position
 	player->position.x += player->direction.x * player->speed * dt;
 	player->position.y += player->direction.y * player->speed * dt;

@@ -5,6 +5,21 @@
 #define SPACE (Color) { 33, 15, 75, 255 }
 #define TRANSLUCENT (Color) { 245, 245, 245, 127 }
 
+typedef unsigned char boolean;
+
+typedef struct Circle
+{
+	Vector2 center;
+	float radius;
+} Circle;
+
+typedef struct Timer
+{
+	double startTime;
+	double duration;
+	boolean started;
+} Timer;
+
 typedef struct Sprite
 {
 	Texture spriteImg;
@@ -12,13 +27,6 @@ typedef struct Sprite
 	Rectangle destRect;
 	Vector2 origin;
 } Sprite;
-
-typedef struct Timer
-{
-	double startTime;
-	double duration;
-	char started;
-} Timer;
 
 typedef struct SpriteSheet
 {
@@ -29,24 +37,12 @@ typedef struct SpriteSheet
 	Vector2 origin;
 } SpriteSheet;
 
+int starCount;
+int asteroidCount;
+int laserCount;
+char fps[9];
 
-typedef struct Circle
-{
-	Vector2 center;
-	float radius;
-} Circle;
-
-#if 0
-typedef struct Timer
-{
-  time_t startTime;
-  time_t duration;
-} Timer;
-#endif
-
-
-//int CheckTimeout(Timer timer);
-int CheckAnimationTimer(Timer* timer);
+boolean CheckAnimationTimer(Timer* timer);
 void UpdateAnimation(SpriteSheet* sprite);
 Vector2 GetNormalizedDirection(float rotation);
 
