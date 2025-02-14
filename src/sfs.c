@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include <time.h>
 #include "raylib.h"
 #include "raymath.h"
@@ -9,7 +10,8 @@
 #include "asteroids.h"
 #include "stars.h"
 
-starCount = 500;
+char fps[10] = "\0";
+starCount = 1000;
 asteroidCount = 100;
 laserCount = 0;
 
@@ -22,6 +24,7 @@ int main ()
 															***********************/
 
 	// variables
+	SearchAndSetResourceDir("resources");
 	SetRandomSeed(time(NULL));
 
 
@@ -34,36 +37,24 @@ int main ()
 	InitAudioDevice();
 	SetMasterVolume(0.5f);
 
-	// resource_dir.h
-	SearchAndSetResourceDir("resources");
-
 	// initialize player
 	Player player =
 	{
-		.collisionBody = {{ 28.0f, 22.0f }, 18.0f }, // center = { posX + 28, posY + 22 }
 		.sprite.spriteImg = LoadTexture("spaceship.png"),
 		.sprite.srcRect = { 0, 0, player.sprite.spriteImg.width, player.sprite.spriteImg.height },
 		.sprite.destRect = { 0, 0, player.sprite.spriteImg.width / 2, player.sprite.spriteImg.height / 2 },
 		.sprite.origin = { 28, 22 },
+		.collisionBody = {{ 28.0f, 22.0f }, 18.0f }, // center = { posX + 28, posY + 22 }
+		.acceleration = 6.0f,
 	};
 
 	// initialize deathsplosion
-	Image deathSprites[28] = {0};
-	int deathFrame = -1;
-	char deathSpritesFileName[17];
-	for (int i = 1; i < 29; i++)
+	SpriteGroup death =
 	{
-		sprintf_s(deathSpritesFileName, 17, "explosion/%d.png", i);
-		deathSprites[i - 1] = LoadImage(deathSpritesFileName);
-	}
-	SpriteSheet death =
-	{
-		.spriteImg = LoadTextureFromImage(deathSprites[0]),
+		.frameTotal = 28,
 		.timer.duration = 1.0 / 48.0,
-		.srcRect = { 0, 0, death.spriteImg.width, death.spriteImg.height },
-		.destRect = { 0, 0, death.spriteImg.width * 2, death.spriteImg.height * 2},
-		.origin = { 48, 46 },
 	};
+	LoadSpriteGroup(&death, 2.0f, "explosion", "png");
 	Sound deathSound = LoadSound("Magical Interface 8-1.wav");
 	SetSoundVolume(deathSound, 1.5f);
 
@@ -91,7 +82,7 @@ int main ()
 	// initialize earth
 	SpriteSheet earth =
 	{
-			.spriteImg = LoadTexture("Earth-Like planet.png"),
+			.sprite = LoadTexture("Earth-Like planet.png"),
 			.timer.duration = 1.0 / 12.0,
 			.srcRect = { 0, 0, 96, 96 },
 			.destRect = { 200, 100, 384, 384 },
@@ -122,15 +113,8 @@ int main ()
 																*********************/
 	while (!WindowShouldClose())
 	{
-		// initialize death animation (once)
-		if (player.dead && !death.timer.started)
-		{
-			death.timer.started = 1;
-			death.timer.startTime = GetTime();
-			death.destRect.x = player.position.x;
-			death.destRect.y = player.position.y;
-			PlaySound(deathSound);
-		}
+		// initialize one-time events
+		StartDeath(player, &death, deathSound);
 		
 																/********************
 																*      UPDATES      * 
@@ -144,41 +128,29 @@ int main ()
 			HideCursor();
 
 		// player inputs
-		if (!player.dead)
-			getPlayerInput(&player);
+		GetPlayerInputs(&player, dt);
 	
 		// laser input and creation
-		if (IsKeyPressed(KEY_SPACE) && !player.dead)
-		{
-			SetSoundPitch(laserSound, 0.01f * (float)GetRandomValue(95, 105));
-			PlaySound(laserSound);
-			lasers[laserCount++] = ShootLaser(player);
-		}
+		ShootLaser(player, lasers, laserSound);
 
-		// update player
+		// update entities
 		if (!player.dead)
 			UpdatePlayerPosition(&player, dt);
-		
-		// update asteroids
 		UpdateAsteroidPositions(asteroids, dt);
-
-		//update lasers
 		UpdateLaserPositions(lasers, dt);
 
 		// update camera
 		camera.target = player.position;
-		if (player.speed > 100)
-			camera.zoom = 1.0f - ((player.speed - 100.0f) / (5.0f * MAX_SPEED));
+		camera.zoom = 1.0f - (player.speed * 0.0325f);
 
-		// animate planet
+		// update planet animation
 		if (CheckAnimationTimer(&earth.timer))
-			UpdateAnimation(&earth);
+			UpdateAnimationSS(&earth);
 
-		// animate death
+		// update player death animation
 		if (death.timer.started)
 			if (CheckAnimationTimer(&death.timer))
-				if (++deathFrame < 28)
-					death.spriteImg = LoadTextureFromImage(deathSprites[deathFrame]);
+				UpdateAnimationSG(&death);
 
 		// update bgm
 #ifdef NDEBUG
@@ -194,36 +166,20 @@ int main ()
 
 		BeginDrawing();
 		BeginMode2D(camera);
-
-		// set background color
 		ClearBackground(SPACE);
-
-		// TODO: fix with camera values
-		// draw fps
-		sprintf_s(&fps, 9, "%d FPS", GetFPS());
-		DrawText(fps, player.position.x - 960.0f, player.position.y - 540.0f, 20, GREEN);
 
 		// draw background
 		DrawStars(stars, starSprite);
-		DrawTexturePro(earth.spriteImg, earth.srcRect, earth.destRect, earth.origin, 0, RAYWHITE);
+		DrawTexturePro(earth.sprite, earth.srcRect, earth.destRect, earth.origin, 0, RAYWHITE);
 
-		// draw lasers
-		if (laserCount)
-			DrawLasers(lasers, laserSprite);
-
-		// draw asteroids
+		// draw entities
+		DrawLasers(lasers, laserSprite);
 		DrawAsteroids(asteroids, asteroidSprite);
+		if (death.frameIndex < 16)
+			DrawPlayer(player);
+		DrawAnimationOnceSG(death);
 
-		// draw player
-		if (deathFrame < 16)
-			DrawTexturePro(player.sprite.spriteImg, player.sprite.srcRect, player.sprite.destRect, player.sprite.origin, player.rotation, RAYWHITE);
-#ifdef DEBUG
-		if (!player.dead)
-			DrawCircleV(player.collisionBody.center, player.collisionBody.radius, TRANSLUCENT);
-#endif // DEBUG
-		if (death.timer.started && deathFrame < 28)
-			DrawTexturePro(death.spriteImg, death.srcRect, death.destRect, death.origin, 0, RAYWHITE);
-
+		UpdateAndDrawFPS(camera);
 		EndMode2D();
 		EndDrawing();
 	} // end of gameloop
@@ -241,12 +197,14 @@ int main ()
 	UnloadTexture(player.sprite.spriteImg);
 	UnloadTexture(asteroidSprite.spriteImg);
 	UnloadTexture(laserSprite.spriteImg);
-	UnloadTexture(earth.spriteImg);
-	UnloadTexture(death.spriteImg);
+	UnloadTexture(earth.sprite);
+	UnloadTexture(death.curSprite);
 
 	// deallocate memory
+	MemFree(stars);
 	MemFree(asteroids);
 	MemFree(lasers);
+	MemFree(death.spriteArr);
 
 	// destroy the window and cleanup the OpenGL context
 	CloseAudioDevice();
@@ -255,6 +213,10 @@ int main ()
 	// return success!
 	return 0;
 }
+
+																/**********************
+																*      FUNCTIONS      *
+																**********************/
 
 boolean CheckAnimationTimer(Timer* timer)
 {
@@ -266,18 +228,55 @@ boolean CheckAnimationTimer(Timer* timer)
   return 0;
 }
 
-void UpdateAnimation(SpriteSheet* sprite)
+void LoadSpriteGroup(SpriteGroup* spriteGroup, float sizeFactor, char* dir, char* ft)
 {
-		if (sprite->srcRect.x >= sprite->spriteImg.width - sprite->srcRect.width)
-			sprite->srcRect.x = 0;
-		else
-			sprite->srcRect.x += sprite->srcRect.width;
+	spriteGroup->spriteArr = MemAlloc(spriteGroup->frameTotal * sizeof(Image));
+	int bufCount = strlen(dir) + strlen(ft) + 6;
+	char* filename = MemAlloc(bufCount * sizeof(char));
+	for (int i = 0; i < spriteGroup->frameTotal; i++)
+	{
+		sprintf_s(filename, bufCount, "%s/%d.%s", dir, (i + 1), ft);
+		spriteGroup->spriteArr[i] = LoadImage(filename);
+	}
+	MemFree(filename);
+	spriteGroup->curSprite = LoadTextureFromImage(spriteGroup->spriteArr[0]);
+	spriteGroup->frameIndex = 1;
+	spriteGroup->srcRect = (Rectangle){ 0, 0, spriteGroup->curSprite.width, spriteGroup->curSprite.height };
+	spriteGroup->destRect = (Rectangle){ 0, 0, sizeFactor * spriteGroup->curSprite.width, sizeFactor * spriteGroup->curSprite.height };
+	spriteGroup->origin = (Vector2){ sizeFactor * spriteGroup->curSprite.width / 2, sizeFactor * spriteGroup->curSprite.height / 2 };
 }
 
-Vector2 GetNormalizedDirection(float rotation)
+void UpdateAnimationSG(SpriteGroup* spriteGroup)
+{
+	if (spriteGroup->frameIndex < spriteGroup->frameTotal)
+		spriteGroup->curSprite = LoadTextureFromImage(spriteGroup->spriteArr[spriteGroup->frameIndex++]);
+	else if (spriteGroup->frameIndex == spriteGroup->frameTotal)
+		spriteGroup->frameIndex++;
+}
+
+void DrawAnimationOnceSG(SpriteGroup spriteGroup)
+{
+	if (spriteGroup.timer.started && spriteGroup.frameIndex < (spriteGroup.frameTotal + 1))
+		DrawTexturePro(spriteGroup.curSprite, spriteGroup.srcRect, spriteGroup.destRect, spriteGroup.origin, 0, RAYWHITE);
+}
+
+void UpdateAnimationSS(SpriteSheet* spriteSheet)
+{
+		if (spriteSheet->srcRect.x >= spriteSheet->sprite.width - spriteSheet->srcRect.width)
+			spriteSheet->srcRect.x = 0;
+		else
+			spriteSheet->srcRect.x += spriteSheet->srcRect.width;
+}
+
+Vector2 GetDirectionFromRotation(float rotation)
 {
 	float radian = DEG2RAD * rotation;
 	Vector2 direction = { sinf(radian), -cosf(radian) };
-	direction = Vector2Normalize(direction);
 	return direction;
+}
+
+void UpdateAndDrawFPS(Camera2D camera)
+{
+	sprintf_s(fps, 10, "%d FPS", GetFPS());
+	DrawText(fps, camera.target.x - (camera.offset.x / camera.zoom), camera.target.y - (camera.offset.y / camera.zoom), 20, GREEN);
 }

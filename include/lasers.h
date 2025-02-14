@@ -11,7 +11,7 @@ typedef struct Laser
 	float rotation;
 } Laser;
 
-Laser ShootLaser(Player player);
+void ShootLaser(Player player, Laser* lasers, Sound sound);
 void UpdateLaserPositions(Laser* lasers, float dt);
 void DrawLasers(Laser* lasers, Sprite texture);
 

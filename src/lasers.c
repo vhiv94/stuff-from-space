@@ -3,16 +3,14 @@
 #include "player.h"
 #include "lasers.h"
 
-Laser ShootLaser(Player player)
+void ShootLaser(Player player, Laser* lasers, Sound sound)
 {
-	Laser newLaser =
+	if (IsKeyPressed(KEY_SPACE) && !player.dead)
 	{
-	  .position = player.position,
-		.direction = player.direction,
-		.collisionBody = { player.position, 5.0f },
-		.rotation = player.rotation,
-	};
-	return newLaser;
+		SetSoundPitch(sound, 0.01f * (float)GetRandomValue(95, 105));
+		PlaySound(sound);
+		lasers[laserCount++] = (Laser){ { player.position, 5.0f }, player.position, player.direction, player.rotation };
+	}
 }
 
 void UpdateLaserPositions(Laser* lasers, float dt)
@@ -39,10 +37,13 @@ void UpdateLaserPositions(Laser* lasers, float dt)
 
 void DrawLasers(Laser* lasers, Sprite texture)
 {
-	for (int i = 0; i < laserCount; i++)
+	if (laserCount)
 	{
+		for (int i = 0; i < laserCount; i++)
+		{
 			texture.destRect.x = lasers[i].position.x;
 			texture.destRect.y = lasers[i].position.y;
 			DrawTexturePro(texture.spriteImg, texture.srcRect, texture.destRect, texture.origin, lasers[i].rotation, RAYWHITE);
+		}
 	}
 }

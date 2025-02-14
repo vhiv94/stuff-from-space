@@ -1,7 +1,7 @@
 #ifndef PLAYER_H
 #define PLAYER_H
 
-#define MAX_SPEED 400.0f
+#define MAX_SPEED 4.0f
 
 typedef struct Player
 {
@@ -11,11 +11,14 @@ typedef struct Player
 	Vector2 direction;
 	Vector2 velocity;
 	float speed;
+	float acceleration;
 	float rotation;
 	boolean dead;
 } Player;
 
-void getPlayerInput(Player* player);
+void GetPlayerInputs(Player* player, float dt);
 void UpdatePlayerPosition(Player* player, float dt);
+void DrawPlayer(Player player);
+void StartDeath(Player player, SpriteGroup* death, Sound sound);
 
 #endif // !PLAYER_H
