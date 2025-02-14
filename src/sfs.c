@@ -32,7 +32,7 @@ int main ()
 
 	// initialize audio
 	InitAudioDevice();
-	SetMasterVolume(0.8f);
+	SetMasterVolume(0.5f);
 
 	// resource_dir.h
 	SearchAndSetResourceDir("resources");
@@ -64,6 +64,8 @@ int main ()
 		.destRect = { 0, 0, death.spriteImg.width * 2, death.spriteImg.height * 2},
 		.origin = { 48, 46 },
 	};
+	Sound deathSound = LoadSound("Magical Interface 8-1.wav");
+	SetSoundVolume(deathSound, 1.5f);
 
 	// initialize asteroids
 	Asteroid* asteroids = LoadAsteroids();
@@ -82,7 +84,7 @@ int main ()
 			.destRect = { 0, 0, laserSprite.spriteImg.width, laserSprite.spriteImg.height },
 			.origin = { 5, 25 },
 	};
-	Sound laserSound = LoadSound("laser.wav");
+	Sound laserSound = LoadSound("Sci-Fi Gun 1-1.wav");
 	SetSoundVolume(laserSound, 0.5f);
 
 	/*** background elements ***/
@@ -110,9 +112,9 @@ int main ()
 
 	// initialize bgm
 #ifdef NDEBUG
-	Music bgm = LoadMusicStream("music.wav");
+	Music bgm = LoadMusicStream("Things From Space 1.mp3");
 	PlayMusicStream(bgm);
-	SetMusicVolume(bgm, 0.6f);
+	SetMusicVolume(bgm, 1.0f);
 #endif // NDEBUG
 
 																/*********************
@@ -127,6 +129,7 @@ int main ()
 			death.timer.startTime = GetTime();
 			death.destRect.x = player.position.x;
 			death.destRect.y = player.position.y;
+			PlaySound(deathSound);
 		}
 		
 																/********************
