@@ -3,7 +3,7 @@
 
 #define LASER_SPEED 1200.0f
 
-typedef struct Laser
+typedef struct
 {
 	Circle collisionBody;
 	Vector2 position;

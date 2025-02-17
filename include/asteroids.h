@@ -1,7 +1,7 @@
 #ifndef ASTEROIDS_H
 #define ASTEROIDS_H
 
-typedef struct Asteroid
+typedef struct
 {
 	Circle collisionBody;
 	Vector2 spriteOrigin;
@@ -13,9 +13,8 @@ typedef struct Asteroid
 	float size;
 } Asteroid;
 
-Asteroid* LoadAsteroids();
+void LoadAsteroids(Asteroid* asteroids);
 void UpdateAsteroidPositions(Asteroid* asteroids, float dt);
 void DrawAsteroids(Asteroid* asteroids, Sprite texture);
-void CheckCollisions(Player* player, Asteroid* asteroids, Laser* lasers);
 
 #endif // !ASTEROIDS_H

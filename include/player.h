@@ -1,9 +1,9 @@
 #ifndef PLAYER_H
 #define PLAYER_H
 
-#define MAX_SPEED 4.0f
+#define MAX_SPEED 400.0f
 
-typedef struct Player
+typedef struct
 {
 	Sprite sprite;
 	Circle collisionBody;
@@ -16,7 +16,7 @@ typedef struct Player
 	boolean dead;
 } Player;
 
-void GetPlayerInputs(Player* player, float dt);
+void GetPlayerInputs(Player* player);
 void UpdatePlayerPosition(Player* player, float dt);
 void DrawPlayer(Player player);
 void StartDeath(Player player, SpriteGroup* death, Sound sound);

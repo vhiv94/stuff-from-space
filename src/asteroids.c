@@ -1,13 +1,13 @@
 #include "raylib.h"
 #include "raymath.h"
-#include "sfs.h"
+#include "mainloop.h"
+#include "game.h"
 #include "player.h"
 #include "lasers.h"
 #include "asteroids.h"
 
-Asteroid* LoadAsteroids()
+void LoadAsteroids(Asteroid* asteroids)
 {
-	Asteroid* asteroids = (Asteroid*)MemAlloc(asteroidCount * sizeof(Asteroid));
 	for (int i = 0; i < asteroidCount; i++)
 	{
 			asteroids[i].position = (Vector2){ GetRandomValue(-4000, 4000), GetRandomValue(-2000, 2000) };
@@ -21,7 +21,6 @@ Asteroid* LoadAsteroids()
 			asteroids[i].collisionBody.radius = 45 / asteroids[i].size;
 			asteroids[i].collisionBody.center = asteroids[i].position;
 	}
-	return asteroids;
 }
 
 void UpdateAsteroidPositions(Asteroid* asteroids, float dt)
@@ -51,45 +50,5 @@ void DrawAsteroids(Asteroid* asteroids, Sprite texture)
 #ifdef DEBUG
 		DrawCircleV(asteroids[i].collisionBody.center, asteroids[i].collisionBody.radius, TRANSLUCENT);
 #endif // DEBUG
-	}
-}
-
-void CheckCollisions(Player* player, Asteroid* asteroids, Laser* lasers)
-{
-	for (int i = 0; i < asteroidCount; i++)
-	{
-
-		if (laserCount)
-		{
-			for (int j = 0; j < laserCount; j++)
-			{
-				if (CheckCollisionCircles(asteroids[i].collisionBody.center, asteroids[i].collisionBody.radius, lasers[j].collisionBody.center, lasers[j].collisionBody.radius))
-				{
-				  // destroy laser
-					for (int k = j; k < laserCount; k++)
-					{
-						lasers[k] = lasers[k + 1];
-					}
-					laserCount--;
-
-					// destroy asteroid
-					//asteroid[i].dead = 1;
-					for (int k = i; k < asteroidCount; k++)
-					{
-						asteroids[k] = asteroids[k + 1];
-					}
-					asteroidCount--;
-				}
-			}
-		}
-
-		if (!player->dead)
-		{
-			if (CheckCollisionCircles(asteroids[i].collisionBody.center, asteroids[i].collisionBody.radius, player->collisionBody.center, player->collisionBody.radius))
-			{
-				player->speed = 0;
-				player->dead = 1;
-			}
-		}
 	}
 }

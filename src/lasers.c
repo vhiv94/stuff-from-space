@@ -1,5 +1,6 @@
 #include "raylib.h"
-#include "sfs.h"
+#include "mainloop.h"
+#include "game.h"
 #include "player.h"
 #include "lasers.h"
 

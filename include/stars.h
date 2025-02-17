@@ -1,7 +1,7 @@
 #ifndef STARS_H
 #define STARS_H
 
-typedef struct Star
+typedef struct
 {
 	Vector2 position;
 	float size;
